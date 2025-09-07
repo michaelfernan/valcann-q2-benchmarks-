@@ -1,8 +1,8 @@
 
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -13,17 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
-/**
- * Q2 — Automação de Backups (Java)
- *
- * Lista arquivos da origem (name,size,created_at_utc,modified_at_utc) → backupsFrom.log (CSV),
- * remove arquivos com criação > N dias,
- * copia arquivos com criação ≤ N dias para o destino → backupsTo.log (CSV).
- *
- * Uso:
- *   java BackupJob --from /home/valcann/backupsFrom --to /home/valcann/backupsTo --log-dir /home/valcann --days 3
- *   (opcional) --dry-run
- */
+
 public class BackupJob {
     private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_INSTANT;
 
@@ -45,13 +35,10 @@ public class BackupJob {
             Files.createDirectories(a.logDir);
             Files.createDirectories(a.to);
 
-            // 1) Listagem e gravação do backupsFrom.log
             listFilesCsv(a.from, fromLog);
 
-            // 2) Remoção de arquivos com criação > N dias
             removeOldFiles(a.from, a.days, a.dryRun);
 
-            // 3) Copiar arquivos com criação ≤ N dias e gerar backupsTo.log
             copyRecentFiles(a.from, a.to, a.days, toLog, a.dryRun);
 
             System.out.println("[OK] Processo concluído.");
@@ -195,7 +182,6 @@ public class BackupJob {
     }
 
     private static Instant bestEffortCreation(BasicFileAttributes at, Path p) throws IOException {
-        // Tenta creationTime(); se não existir ou for zero/negativo, cai para lastModifiedTime()
         Instant creation = at.creationTime().toInstant();
         if (creation.toEpochMilli() <= 0) {
             creation = at.lastModifiedTime().toInstant();
